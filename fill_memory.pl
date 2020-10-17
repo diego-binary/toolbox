@@ -5,29 +5,17 @@ use warnings;
 
 my $redis = RedisDB->new(host => 'localhost');
 
-sub assemble_hash($) {
-    my @arr = shift->@*;
-    my %hash ;
-    map { $hash{$_} = ($hash{$_} // 0) + 1 } @arr;
-    return \%hash;
-}
 
-sub diff_hash($$) {
-    my %hash = shift->%*;
-    my %prev_hash = shift->%*;
-
-    my %diff_hash;
-    map { $diff_hash{$_} = $hash{$_} unless defined $prev_hash{$_} && $prev_hash{$_} == $hash{$_}  } keys %hash;
-    return \%diff_hash;
-}
-
-my %prev_hash;
 my $count = 0;
-
+my $delta = time;
 while ( 1 ) {
-    $redis->hset('DUMMY::KEY', $count , time );
+    $redis->hset('DUMMY::KEY::' . $count , $count , time );
     $count++;
-    #sleep 1;
+    unless ( $count % 1000000 ) {
+        $delta = time - $delta;
+        print "Stored " . $count . " records in " . $delta . " [s]\n"  ;
+        $delta = time;
+    }
 }
 
 
